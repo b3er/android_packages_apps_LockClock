@@ -1,3 +1,6 @@
 -keep class com.cyanogenmod.lockclock.preference.Preferences {
   *;
 }
+
+-include proguard.local.cfg
+

@@ -12,8 +12,4 @@ buildscript {
 
 apply plugin: 'andapp'
 
-dependencies {
-	compile 'tiny:tiny.misc.frag:1.0.0-SNAPSHOT'
-	compile 'b3er:jni.tinymisc.b3er.app:1.0.0-SNAPSHOT'
-}
 
