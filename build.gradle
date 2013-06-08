@@ -1,0 +1,19 @@
+apply plugin: 'eclipse'
+apply plugin: 'java'
+apply plugin: 'maven'
+
+buildscript {
+
+        dependencies {
+                classpath "tiny.android:gradle-android-plugin:1.0.0-SNAPSHOT"
+        }
+
+}
+
+apply plugin: 'andapp'
+
+dependencies {
+	compile 'tiny:tiny.misc.frag:1.0.0-SNAPSHOT'
+	compile 'b3er:jni.tinymisc.b3er.app:1.0.0-SNAPSHOT'
+}
+
