@@ -143,7 +143,8 @@ public class WidgetUtils {
     private static final String[] CLOCK_PACKAGES = new String[] {
         "com.google.android.deskclock",
         "com.android.deskclock",
-        "com.htc.android.worldclock"
+        "com.htc.android.worldclock",
+		"com.lenovo.deskclock"
     };
 
     public static Intent getDefaultClockIntent(Context context) {
