@@ -86,7 +86,7 @@
     <string name="weather_refresh_6hrs">6 horas</string>
     <string name="weather_refresh_8hrs">8 horas</string>
     <string name="weather_enable">Exibir tempo</string>
-    <string name="weather_source">Yahoo! Tempo</string>
+    <string name="weather_source_yahoo">Yahoo! Tempo</string>
     <string name="weather_use_custom_location">Usar local personalizado</string>
     <string name="weather_geolocated">Geolocalização usando a rede</string>
     <string name="weather_custom_location_dialog_title">Inserir localização</string>
@@ -160,4 +160,16 @@
     <string name="calendar_highlight_upcoming_events_title">Eventos em destaque</string>
     <string name="calendar_highlight_upcoming_events_summary">Destacar os eventos do dia e, depois das 20 horas, os eventos do dia seguinte também</string>
     <string name="calendar_highlight_upcoming_events_bold">Fonte em negrito</string>
+    <string name="calendar_icon_title">Ícone do Calendário</string>
+    <string name="calendar_lookahead_today">Hoje</string>
+    <string name="clock_am_pm_title">Exibir indicador AM/PM</string>
+    <string name="weather_select_location">Selecionar localização</string>
+    <string name="weather_cannot_reach_provider">Não foi possível alcançar %s</string>
+    <string name="weather_source_title">Fonte de dados</string>
+    <string name="weather_icon_set_title">Ícones</string>
+    <string name="weather_icons_standard">Colorido</string>
+    <string name="weather_icons_monochrome">Monocromático</string>
+    <string name="icon_set_selection_get_more">Obtenha mais\u2026</string>
+    <string name="weather_kph">km/h</string>
+    <string name="weather_mph">mph</string>
 </resources>

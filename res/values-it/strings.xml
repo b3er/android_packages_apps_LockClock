@@ -13,7 +13,6 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-
 <resources>
     <string name="unknown">Sconosciuto</string>
     <string name="cancel">Annulla</string>
@@ -27,9 +26,9 @@
     <string name="weather_5">Pioggia mista a neve</string>
     <string name="weather_6">Pioggia mista a nevischio</string>
     <string name="weather_7">Neve mista a nevischio</string>
-    <string name="weather_8">Pioviggine congelantesi</string>
+    <string name="weather_8">Pioviggine congelata</string>
     <string name="weather_9">Pioviggine</string>
-    <string name="weather_10">Pioggia congelantesi</string>
+    <string name="weather_10">Pioggia congelata</string>
     <string name="weather_11">Rovesci</string>
     <string name="weather_12">Rovesci</string>
     <string name="weather_13">Raffiche di neve</string>
@@ -68,6 +67,8 @@
     <string name="weather_46">Rovesci di neve</string>
     <string name="weather_47">Rovesci temporaleschi isolati</string>
     <string name="weather_3200"></string>
+    <string name="weather_kph">kph</string>
+    <string name="weather_mph">mph</string>
     <string name="weather_N">N</string>
     <string name="weather_NE">NE</string>
     <string name="weather_E">E</string>
@@ -79,7 +80,8 @@
     <string name="weather_no_data">Dati non disponibili</string>
     <string name="weather_tap_to_refresh">Tocca per aggiornare</string>
     <string name="weather_refreshing">Aggiornamento\u2026</string>
-    <string name="weather_last_sync_just_now">Adesso</string>
+    <string name="weather_last_sync_just_now">Poco fa</string>
+    <string name="weather_cannot_reach_provider">Impossibile collegarsi a %s al momento</string>
     <string name="weather_refresh_manual">Manuale</string>
     <string name="weather_refresh_30min">30 minuti</string>
     <string name="weather_refresh_60min">60 minuti</string>
@@ -98,9 +100,11 @@
     <string name="clock_font_minutes_title">Minuti in grassetto</string>
     <string name="clock_font_date_title">Data e sveglia in grassetto</string>
     <string name="show_alarm_title">Visualizza la prossima sveglia</string>
+    <string name="clock_am_pm_title">Mostra l\'indicatore AM/PM</string>
     <string name="weather_enabled">Attivo</string>
     <string name="weather_enable">Visualizza meteo</string>
-    <string name="weather_source">Yahoo! Meteo</string>
+    <string name="weather_source_title">Fonte meteo</string>
+    <string name="weather_source_yahoo">Yahoo! Meteo</string>
     <string name="weather_use_custom_location">Posizione personalizzata</string>
     <string name="weather_geolocated">Localizzazione tramite la rete</string>
     <string name="weather_custom_location_dialog_title">Inserisci la posizione</string>
@@ -111,7 +115,8 @@
     <string name="weather_refresh_interval">Intervallo aggiornamento</string>
     <string name="weather_use_metric">Usa unità metriche</string>
     <string name="weather_retrieve_location_dialog_title">Impossibile rilevare la posizione</string>
-    <string name="weather_retrieve_location_dialog_message">La localizzazione tramite la rete è disabilitata.\n\nImposta una posizione personalizzata o abilita la localizzazione tramite la rete</string>
+    <string name="weather_retrieve_location_dialog_message">La localizzazione tramite la rete è disabilitata.\n\nImposta una posizione 
+        personalizzata o abilita la localizzazione tramite la rete</string>
     <string name="weather_retrieve_location_dialog_enable_button">Abilita</string>
     <string name="weather_invert_lowhigh">Inverti temperature minime/massime</string>
     <string name="weather_progress_title">Verifica della posizione\u2026</string>
@@ -119,12 +124,14 @@
     <string name="weather_alternate_icons_summary">Seleziona per sostituire le icone predefinite (colorate) con quelle alternative (bianche)</string>
     <string name="weather_show_when_minimized_title">Mostra se minimizzato</string>
     <string name="weather_show_when_minimized_summary">Mostra le informazioni di riepilogo sul tempo quando il widget è minimizzato</string>
+    <string name="weather_select_location">Seleziona posizione</string>
     <string name="calendar_title">Visualizza eventi</string>
     <string name="calendars_title">Calendari eventi</string>
     <string name="calendars_summary">Mostra gli eventi da questi calendari</string>
     <string name="calendar_reminders_only_title">Solo avvisi</string>
     <string name="calendar_reminders_only_summary">Visualizza solo eventi con avvisi</string>
     <string name="calendar_hide_allday_title">Nascondi eventi del giorno</string>
+    <string name="calendar_icon_title">Icona calendario</string>
     <string name="calendar_lookahead_title">Anticipo eventi</string>
     <string name="calendar_show_location_title">Posizione evento</string>
     <string name="calendar_show_description_title">Descrizione evento</string>
@@ -139,6 +146,7 @@
     <string name="calendar_lookahead_3hrs">3 ore</string>
     <string name="calendar_lookahead_6hrs">6 ore</string>
     <string name="calendar_lookahead_12hrs">12 ore</string>
+    <string name="calendar_lookahead_today">Oggi</string>
     <string name="calendar_lookahead_1day">1 giorno</string>
     <string name="calendar_lookahead_3days">3 giorni</string>
     <string name="calendar_lookahead_1wk">1 settimana</string>
@@ -160,4 +168,8 @@
     <string name="holo_orange_light">Arancione chiaro</string>
     <string name="holo_orange_dark">Arancione scuro</string>
     <string name="holo_blue_bright">Azzurro luminoso</string>
+    <string name="weather_icon_set_title">Set icone</string>
+    <string name="weather_icons_standard">Colorate</string>
+    <string name="weather_icons_monochrome">Monocrome</string>
+    <string name="icon_set_selection_get_more">Altre\u2026</string>
 </resources>

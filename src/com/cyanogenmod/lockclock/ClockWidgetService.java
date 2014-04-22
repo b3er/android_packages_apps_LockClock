@@ -20,11 +20,13 @@ import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
@@ -33,12 +35,15 @@ import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
 
-import com.cyanogenmod.lockclock.calendar.CalendarWidgetService;
+import com.cyanogenmod.lockclock.calendar.CalendarViewsService;
 import com.cyanogenmod.lockclock.misc.Constants;
+import com.cyanogenmod.lockclock.misc.IconUtils;
 import com.cyanogenmod.lockclock.misc.Preferences;
 import com.cyanogenmod.lockclock.misc.WidgetUtils;
 import com.cyanogenmod.lockclock.weather.WeatherInfo;
 import com.cyanogenmod.lockclock.weather.WeatherUpdateService;
+
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
@@ -106,9 +111,20 @@ public class ClockWidgetService extends IntentService {
         for (int id : mWidgetIds) {
             boolean showCalendar = false;
 
+            // Determine if its a home or a lock screen widget
+            Bundle myOptions = mAppWidgetManager.getAppWidgetOptions (id);
+            boolean isKeyguard = false;
+            if (WidgetUtils.isTextClockAvailable()) {
+                // This is only available on API 17+, make sure we are not calling it on API16
+                // This generates an API level Lint warning, ignore it
+                int category = myOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_HOST_CATEGORY, -1);
+                isKeyguard = category == AppWidgetProviderInfo.WIDGET_CATEGORY_KEYGUARD;
+            }
+            if (D) Log.d("TAG", "For Widget id " + id + " isKeyguard is set to " + isKeyguard);
+
             // Determine which layout to use
             boolean smallWidget = showWeather && showWeatherWhenMinimized
-                    && WidgetUtils.showSmallWidget(this, id, digitalClock);
+                    && WidgetUtils.showSmallWidget(this, id, digitalClock, isKeyguard);
             if (smallWidget) {
                 // The small widget is only shown if weather needs to be shown
                 // and there is not enough space for the full weather widget and
@@ -129,6 +145,11 @@ public class ClockWidgetService extends IntentService {
             refreshClock(remoteViews, smallWidget, digitalClock);
             refreshAlarmStatus(remoteViews, smallWidget);
 
+            // Refresh the time if using TextView Clock (API 16)
+            if(!WidgetUtils.isTextClockAvailable()) {
+                refreshTime(remoteViews, smallWidget);
+            }
+
             // Don't bother with Calendar if its not visible
             if (showCalendar) {
                 refreshCalendar(remoteViews, id);
@@ -136,7 +157,7 @@ public class ClockWidgetService extends IntentService {
             // Hide the calendar panel if not visible
             remoteViews.setViewVisibility(R.id.calendar_panel, showCalendar ? View.VISIBLE : View.GONE);
 
-            boolean canFitWeather = smallWidget || WidgetUtils.canFitWeather(this, id, digitalClock);
+            boolean canFitWeather = smallWidget || WidgetUtils.canFitWeather(this, id, digitalClock, isKeyguard);
             // Now, if we need to show the actual weather, do so
             if (showWeather && canFitWeather) {
                 WeatherInfo weatherInfo = Preferences.getCachedWeatherInfo(this);
@@ -167,7 +188,7 @@ public class ClockWidgetService extends IntentService {
         // Analog or Digital clock
         if (digitalClock) {
             // Hours/Minutes is specific to Digital, set it's size
-            refreshClockFont(clockViews);
+            refreshClockFont(clockViews, smallWidget);
             clockViews.setViewVisibility(R.id.digital_clock, View.VISIBLE);
             clockViews.setViewVisibility(R.id.analog_clock, View.GONE);
         } else {
@@ -186,8 +207,45 @@ public class ClockWidgetService extends IntentService {
         }
     }
 
-    private void refreshClockFont(RemoteViews clockViews) {
+    // API 16 TextView Clock support
+    private void refreshTime(RemoteViews clockViews, boolean smallWidget) {
+        Locale locale = Locale.getDefault();
+        Date now = new Date();
+        String dateFormat = getString(R.string.abbrev_wday_month_day_no_year);
+        CharSequence date = DateFormat.format(dateFormat, now);
+        String hours = new SimpleDateFormat(getHourFormat(), locale).format(now);
+        String minutes = new SimpleDateFormat(getString(R.string.widget_12_hours_format_no_ampm_m),
+                locale).format(now);
+
+        // Hours
+        if (Preferences.useBoldFontForHours(this)) {
+            clockViews.setTextViewText(R.id.clock1_bold, hours);
+        } else {
+            clockViews.setTextViewText(R.id.clock1_regular, hours);
+        }
+
+        // Minutes
+        if (Preferences.useBoldFontForMinutes(this)) {
+            clockViews.setTextViewText(R.id.clock2_bold, minutes);
+        } else {
+            clockViews.setTextViewText(R.id.clock2_regular, minutes);
+        }
+
+        // Date and Alarm font
+        if (!smallWidget) {
+            if (Preferences.useBoldFontForDateAndAlarms(this)) {
+                clockViews.setTextViewText(R.id.date_bold, date);
+            } else {
+                clockViews.setTextViewText(R.id.date_regular, date);
+            }
+        } else {
+            clockViews.setTextViewText(R.id.date, date);
+        }
+    }
+
+    private void refreshClockFont(RemoteViews clockViews, boolean smallWidget) {
         int color = Preferences.clockFontColor(this);
+        String amPM = new SimpleDateFormat("a", Locale.getDefault()).format(new Date());
 
         // Hours
         if (Preferences.useBoldFontForHours(this)) {
@@ -209,6 +267,15 @@ public class ClockWidgetService extends IntentService {
             clockViews.setViewVisibility(R.id.clock2_regular, View.VISIBLE);
             clockViews.setViewVisibility(R.id.clock2_bold, View.GONE);
             clockViews.setTextColor(R.id.clock2_regular, color);
+        }
+
+        // Show the AM/PM indicator
+        if (!DateFormat.is24HourFormat(this) && Preferences.showAmPmIndicator(this)) {
+            clockViews.setViewVisibility(R.id.clock_ampm, View.VISIBLE);
+            clockViews.setTextViewText(R.id.clock_ampm, amPM);
+            clockViews.setTextColor(R.id.clock_ampm, color);
+        } else {
+            clockViews.setViewVisibility(R.id.clock_ampm, View.GONE);
         }
     }
 
@@ -243,6 +310,16 @@ public class ClockWidgetService extends IntentService {
         clockViews.setTextViewTextSize(R.id.clock2_regular, TypedValue.COMPLEX_UNIT_PX, fontSize * scale);
     }
 
+    private String getHourFormat() {
+        String format;
+        if (DateFormat.is24HourFormat(this)) {
+            format = getString(R.string.widget_24_hours_format_h_api_16);
+        } else {
+            format = getString(R.string.widget_12_hours_format_h);
+        }
+        return format;
+    }
+
     //===============================================================================================
     // Alarm related functionality
     //===============================================================================================
@@ -252,26 +329,30 @@ public class ClockWidgetService extends IntentService {
             if (!TextUtils.isEmpty(nextAlarm)) {
                 // An alarm is set, deal with displaying it
                 int color = Preferences.clockAlarmFontColor(this);
+                final Resources res = getResources();
 
                 // Overlay the selected color on the alarm icon and set the imageview
                 alarmViews.setImageViewBitmap(R.id.alarm_icon,
-                        WidgetUtils.getOverlaidBitmap(this, R.drawable.ic_alarm_small, color));
+                        IconUtils.getOverlaidBitmap(res, R.drawable.ic_alarm_small, color));
                 alarmViews.setViewVisibility(R.id.alarm_icon, View.VISIBLE);
 
                 if (!smallWidget) {
                     if (Preferences.useBoldFontForDateAndAlarms(this)) {
-                        alarmViews.setTextViewText(R.id.nextAlarm_bold, nextAlarm.toString().toUpperCase(Locale.getDefault()));
+                        alarmViews.setTextViewText(R.id.nextAlarm_bold,
+                                nextAlarm.toString().toUpperCase(Locale.getDefault()));
                         alarmViews.setViewVisibility(R.id.nextAlarm_bold, View.VISIBLE);
                         alarmViews.setViewVisibility(R.id.nextAlarm_regular, View.GONE);
                         alarmViews.setTextColor(R.id.nextAlarm_bold, color);
                     } else {
-                        alarmViews.setTextViewText(R.id.nextAlarm_regular, nextAlarm.toString().toUpperCase(Locale.getDefault()));
+                        alarmViews.setTextViewText(R.id.nextAlarm_regular,
+                                nextAlarm.toString().toUpperCase(Locale.getDefault()));
                         alarmViews.setViewVisibility(R.id.nextAlarm_regular, View.VISIBLE);
                         alarmViews.setViewVisibility(R.id.nextAlarm_bold, View.GONE);
                         alarmViews.setTextColor(R.id.nextAlarm_regular, color);
                     }
                 } else {
-                    alarmViews.setTextViewText(R.id.nextAlarm, nextAlarm.toString().toUpperCase(Locale.getDefault()));
+                    alarmViews.setTextViewText(R.id.nextAlarm,
+                            nextAlarm.toString().toUpperCase(Locale.getDefault()));
                     alarmViews.setViewVisibility(R.id.nextAlarm, View.VISIBLE);
                     alarmViews.setTextColor(R.id.nextAlarm, color);
                 }
@@ -310,15 +391,18 @@ public class ClockWidgetService extends IntentService {
     private void setWeatherData(RemoteViews weatherViews, boolean smallWidget, WeatherInfo w) {
         int color = Preferences.weatherFontColor(this);
         int timestampColor = Preferences.weatherTimestampFontColor(this);
-        boolean colorIcons = Preferences.useAlternateWeatherIcons(this);
+        String iconsSet = Preferences.getWeatherIconSet(this);
+
+        // Reset no weather visibility
+        weatherViews.setViewVisibility(R.id.weather_no_data, View.GONE);
+        weatherViews.setViewVisibility(R.id.weather_refresh, View.GONE);
 
         // Weather Image
-        if (colorIcons) {
-            // No additional color overlays needed
-            weatherViews.setImageViewResource(R.id.weather_image, w.getConditionResource());
+        int resId = w.getConditionResource(iconsSet);
+        if (resId != 0) {
+            weatherViews.setImageViewResource(R.id.weather_image, w.getConditionResource(iconsSet));
         } else {
-            // Overlay the condition image with the appropriate color
-            weatherViews.setImageViewBitmap(R.id.weather_image, w.getConditionBitmap(color));
+            weatherViews.setImageViewBitmap(R.id.weather_image, w.getConditionBitmap(iconsSet, color));
         }
 
         // Weather Condition
@@ -365,52 +449,82 @@ public class ClockWidgetService extends IntentService {
         }
 
         // Register an onClickListener on Weather
-        setWeatherClickListener(weatherViews);
+        setWeatherClickListener(weatherViews, false);
     }
 
     /**
      * There is no data to display, display 'empty' fields and the 'Tap to reload' message
      */
     private void setNoWeatherData(RemoteViews weatherViews, boolean smallWidget) {
-        boolean defaultIcons = !Preferences.useAlternateWeatherIcons(this);
-        final Resources res = getBaseContext().getResources();
         int color = Preferences.weatherFontColor(this);
+        boolean firstRun = Preferences.isFirstWeatherUpdate(this);
 
-        // Weather Image - Either the default or alternate set
-        weatherViews.setImageViewResource(R.id.weather_image,
-                defaultIcons ? R.drawable.weather_na : R.drawable.weather2_na);
-
+        // Hide the normal weather stuff
+        int providerNameResource = Preferences.weatherProvider(this).getNameResourceId();
+        String noData = getString(R.string.weather_cannot_reach_provider, getString(providerNameResource));
+        weatherViews.setViewVisibility(R.id.weather_image, View.INVISIBLE);
         if (!smallWidget) {
-            weatherViews.setTextViewText(R.id.weather_city, res.getString(R.string.weather_no_data));
-            weatherViews.setViewVisibility(R.id.weather_city, View.VISIBLE);
+            weatherViews.setViewVisibility(R.id.weather_city, View.GONE);
             weatherViews.setViewVisibility(R.id.update_time, View.GONE);
-            weatherViews.setTextColor(R.id.weather_city, color);
+            weatherViews.setViewVisibility(R.id.weather_temps_panel, View.GONE);
+            weatherViews.setViewVisibility(R.id.weather_condition, View.GONE);
+
+            // Set up the no data and refresh indicators
+            weatherViews.setTextViewText(R.id.weather_no_data, noData);
+            weatherViews.setTextViewText(R.id.weather_refresh, getString(R.string.weather_tap_to_refresh));
+            weatherViews.setTextColor(R.id.weather_no_data, color);
+            weatherViews.setTextColor(R.id.weather_refresh, color);
+
+            // For a better OOBE, dont show the no_data message if this is the first run
+            weatherViews.setViewVisibility(R.id.weather_no_data, firstRun ? View.GONE : View.VISIBLE);
+            weatherViews.setViewVisibility(R.id.weather_refresh,  firstRun ? View.GONE : View.VISIBLE);
+        } else {
+            weatherViews.setTextViewText(R.id.weather_temp, firstRun ? null : noData);
+            weatherViews.setTextViewText(R.id.weather_condition, firstRun ? null : getString(R.string.weather_tap_to_refresh));
+            weatherViews.setTextColor(R.id.weather_temp, color);
+            weatherViews.setTextColor(R.id.weather_condition, color);
         }
 
-        weatherViews.setViewVisibility(R.id.weather_temps_panel, View.GONE);
-        weatherViews.setTextViewText(R.id.weather_condition, res.getString(R.string.weather_tap_to_refresh));
-        weatherViews.setTextColor(R.id.weather_condition, color);
-
-        // Register an onClickListener on Weather
-        setWeatherClickListener(weatherViews);
+        // Register an onClickListener on Weather with the default (Refresh) action
+        if (!firstRun) {
+            setWeatherClickListener(weatherViews, true);
+        }
     }
 
-    private void setWeatherClickListener(RemoteViews weatherViews) {
-        weatherViews.setOnClickPendingIntent(R.id.weather_panel,
-                WeatherUpdateService.getUpdateIntent(this, true));
+    private void setWeatherClickListener(RemoteViews weatherViews, boolean forceRefresh) {
+        // Register an onClickListener on the Weather panel, default action is show forecast
+        PendingIntent pi = null;
+        if (forceRefresh) {
+            pi = WeatherUpdateService.getUpdateIntent(this, true);
+        }
+
+        if (pi == null) {
+            Intent i = new Intent(this, ClockWidgetProvider.class);
+            i.setAction(Constants.ACTION_SHOW_FORECAST);
+            pi = PendingIntent.getBroadcast(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT);
+        }
+        weatherViews.setOnClickPendingIntent(R.id.weather_panel, pi);
     }
 
+    
     //===============================================================================================
     // Calendar related functionality
     //===============================================================================================
     private void refreshCalendar(RemoteViews calendarViews, int widgetId) {
+        final Resources res = getResources();
         // Calendar icon: Overlay the selected color and set the imageview
         int color = Preferences.calendarFontColor(this);
-        calendarViews.setImageViewBitmap(R.id.calendar_icon,
-                WidgetUtils.getOverlaidBitmap(this, R.drawable.ic_lock_idle_calendar, color));
+
+        // Hide the icon if preference set
+        if (Preferences.showCalendarIcon(this)) {
+            calendarViews.setImageViewBitmap(R.id.calendar_icon,
+                    IconUtils.getOverlaidBitmap(res, R.drawable.ic_lock_idle_calendar, color));
+        } else {
+            calendarViews.setImageViewBitmap(R.id.calendar_icon, null);
+        }
 
         // Set up and start the Calendar RemoteViews service
-        final Intent remoteAdapterIntent = new Intent(this, CalendarWidgetService.class);
+        final Intent remoteAdapterIntent = new Intent(this, CalendarViewsService.class);
         remoteAdapterIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId);
         remoteAdapterIntent.setData(Uri.parse(remoteAdapterIntent.toUri(Intent.URI_INTENT_SCHEME)));
         calendarViews.setRemoteAdapter(R.id.calendar_list, remoteAdapterIntent);
@@ -418,7 +532,7 @@ public class ClockWidgetService extends IntentService {
 
         // Register an onClickListener on Calendar starting the Calendar app
         final Intent calendarClickIntent = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CALENDAR);
-        final PendingIntent calendarClickPendingIntent = PendingIntent.getActivity(this, 0, calendarClickIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        final PendingIntent calendarClickPendingIntent = PendingIntent.getActivity(this, 0, calendarClickIntent,PendingIntent.FLAG_UPDATE_CURRENT);
         calendarViews.setOnClickPendingIntent(R.id.calendar_icon, calendarClickPendingIntent);
 
         final Intent eventClickIntent = new Intent(Intent.ACTION_VIEW);
